@@ -4,7 +4,7 @@ const Contact = require('../models/contactModel');
 //@desc get ALL contacts
 //@route GET /api/contacts
 //@access Public
-const getContacts = asyncHandler (async (req, res) => {
+const getContacts = asyncHandler(async (req, res) => {
   const contacts = await Contact.find();
   res.status(200).json(contacts);
 });
@@ -12,50 +12,57 @@ const getContacts = asyncHandler (async (req, res) => {
 // @desc create a new contact
 // @route POST /api/contacts
 // @access Public
-const createContact = asyncHandler (async (req, res) => {
-  console.log("The request body is:", req.body);
-
-  const { name, age, email } = req.body;
+const createContact = asyncHandler(async (req, res) => {
+  const { name, email , age} = req.body;
   if (!name || !age || !email) {
     res.status(400);
     throw new Error("Please add all fields");
   }
-
   const contact = await Contact.create({
     name, email, age
-  })
+  });
   res.status(201).json(contact);
 });
 
 // @desc update contact by ID
 // @route PUT /api/contacts/:id
 // @access Public
-const updateContact = asyncHandler (async (req, res) => {
+const updateContact = asyncHandler(async (req, res) => {
   const contact = await Contact.findById(req.params.id);
   if (!contact) {
-    res.status(400);
+    res.status(404);
     throw new Error("Contact not found");
   }
   const updatedContact = await Contact.findByIdAndUpdate(
     req.params.id,
     req.body,
     {new: true},
-  )
+  );
   res.status(200).json(updatedContact);
 });
 
 // @desc delete contact by ID
 // @route DELETE /api/contacts/:id
 // @access Public
-const deleteContact = asyncHandler (async (req, res) => {
-  res.status(200).json({ message: `Deleting Contact with ID ${req.params.id}` });
+const deleteContact = asyncHandler(async (req, res) => {
+  const contact = await Contact.findById(req.params.id);
+  if (!contact) {
+    res.status(404);
+    throw new Error("Contact not found");
+  }
+  await contact.deleteOne();
+  res.status(200).json(contact);
 });
 
 // @desc get contact by ID
 // @route GET /api/contacts/:id
 // @access Public
-const getContactById = asyncHandler (async (req, res) => {
+const getContactById = asyncHandler(async (req, res) => {
   const contact = await Contact.findById(req.params.id);
+  if (!contact) {
+    res.status(404);
+    throw new Error("Contact not found");
+  }
   res.status(200).json(contact);
 });
 
