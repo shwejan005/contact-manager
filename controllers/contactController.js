@@ -14,9 +14,9 @@ const getContacts = asyncHandler(async (req, res) => {
 // @access private
 const createContact = asyncHandler(async (req, res) => {
   const { name, email , age} = req.body;
-  if (!name || !age || !email) {
+  if (!name?.trim() || !email?.trim() || !age) {
     res.status(400);
-    throw new Error("Please add all fields");
+    throw new Error("Please provide name, email, and age");
   }
   const contact = await Contact.create({
     name, email, age, user_id: req.user.id
@@ -29,10 +29,17 @@ const createContact = asyncHandler(async (req, res) => {
 // @access private
 const updateContact = asyncHandler(async (req, res) => {
   const contact = await Contact.findById(req.params.id);
+
   if (!contact) {
     res.status(404);
     throw new Error("Contact not found");
   }
+
+  if (contact.user_id.toString() !== req.user.id) {
+    res.status(403);
+    throw new Error("User not authorized to update this contact");
+  }
+
   const updatedContact = await Contact.findByIdAndUpdate(
     req.params.id,
     req.body,
@@ -46,10 +53,17 @@ const updateContact = asyncHandler(async (req, res) => {
 // @access private
 const deleteContact = asyncHandler(async (req, res) => {
   const contact = await Contact.findById(req.params.id);
+
   if (!contact) {
     res.status(404);
     throw new Error("Contact not found");
   }
+  
+  if (contact.user_id.toString() !== req.user.id) {
+    res.status(403);
+    throw new Error("User not authorized to delete this contact");
+  }
+
   await contact.deleteOne();
   res.status(200).json(contact);
 });
@@ -59,9 +73,14 @@ const deleteContact = asyncHandler(async (req, res) => {
 // @access private
 const getContactById = asyncHandler(async (req, res) => {
   const contact = await Contact.findById(req.params.id);
+
   if (!contact) {
     res.status(404);
     throw new Error("Contact not found");
+  }
+  if (contact.user_id.toString() !== req.user.id) {
+    res.status(403);
+    throw new Error("User not authorized to view this contact");
   }
   res.status(200).json(contact);
 });
