@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const bcrypt = require('bcrypt')
 const User = require('../models/userModel');
+const jwt = require('jsonwebtoken');
 
 // @desc Register a user
 // @route POST /api/users/register
@@ -41,8 +42,31 @@ const registerUser = asyncHandler(async (req, res) => {
 // @route POST /api/users/login
 // @access Public
 const loginUser = asyncHandler(async (req, res) => {
-  res.json ({ message: "Login the user" });
-})
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ message: "Please add all fields" });
+  }
+  const user = await User.findOne({email});
+  if (user && (await bcrypt.compare(password, user.password))) {
+    const accessToken = jwt.sign({
+      user: {
+        username: user.username,
+        email: user.email,
+        id: user.id
+      },
+    }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: "1m" })
+    res.json({
+      accessToken,
+      user: {
+        _id: user.id,
+        username: user.username,
+        email: user.email
+      }
+    });
+  } else {
+    return res.status(401).json({ message: "Invalid credentials" });
+  }
+});
 
 // @desc Get the current user
 // @route GET /api/users/current
